@@ -1,0 +1,31 @@
+{
+    "name": "wlib/db",
+    "description": "Simple implementation on top of PDO to handle your database queries.",
+    "type": "library",
+    "keywords": ["database","pdo","sql","dao","dal","wlib"],
+    "license": "CECILL-2.1",
+    "authors": [
+        {
+            "name": "Cédric Ducarre",
+            "email": "samray1024@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=7.1.0",
+        "wlib/tools": "^1.0"
+    },
+    "require-dev": {
+        "pestphp/pest": "^2.21"
+    },
+    "autoload": {
+        "psr-4": {
+            "wlib\\Db\\": "src/"
+        }
+    },
+    "minimum-stability": "stable",
+    "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        }
+    }
+}
