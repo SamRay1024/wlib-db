@@ -1,0 +1,6 @@
+# See for more : https://php.watch/articles/composer-gitattributes
+
+/tests            export-ignore
+/phpunit.xml      export-ignore
+
+*.php diff=php
