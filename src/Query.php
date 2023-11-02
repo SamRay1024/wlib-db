@@ -611,7 +611,7 @@ class Query
 
 		if (!is_null($mValue)
 			&& (
-				(is_string($mValue) && $mValue[0] != ':' && $mValue != '?')
+				(is_string($mValue) && strpos($mValue, ':') !== 0 && $mValue != '?')
 				|| !is_string($mValue)
 			)
 		) {
