@@ -702,14 +702,14 @@ class Query
 	 *
 	 * @param string|integer $mKey Parameter name or index.
 	 * @param mixed $mValue Parameter value.
-	 * @param string|null $sType One of the PDO::PARAM_* constants.
+	 * @param int|null $sType One of the PDO::PARAM_* constants.
 	 * @return self
 	 */
 	public function setParameter(
-		string|int $mKey, mixed $mValue, string|null $sType = PDO::PARAM_STR
+		string|int $mKey, mixed $mValue, int|null $iType = PDO::PARAM_STR
 	): self
 	{
-		$this->aParametersTypes[$mKey] = $sType;
+		$this->aParametersTypes[$mKey] = $iType;
 		$this->aParameters[$mKey] = $mValue;
 
 		return $this;
