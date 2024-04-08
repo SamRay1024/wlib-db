@@ -592,6 +592,33 @@ abstract class Table
 	}
 
 	/**
+	 * Find an ID from a column.
+	 * 
+	 * Beware that If `$sColName` refers to a non unique column, more than one
+	 * row can exists, and only one will be returned.
+	 *
+	 * @param string $sColumn Column name to select (prefer a unique column).
+	 * @param integer $mValue Column value.
+	 * @param integer $iType Column type among PDO::PARAM_* constants.
+	 * @return integer ID value or 0 if not found.
+	 */
+	public function findId(string $sColumn, mixed $mValue, int $iType = \PDO::PARAM_STR): int
+	{
+		if ($sColumn == '')
+			return false;
+
+		$oQuery = $this->oDb->query();
+
+		return (int) $oQuery
+			->select(static::COL_ID_NAME)
+			->from(static::TABLE_NAME)
+			->where($oQuery->esc($sColumn) .' = :value')
+			->setParameter('value', $mValue, $iType)
+			->run()
+			->fetchColumn();
+	}
+
+	/**
 	 * Select a record from its ID as an object.
 	 *
 	 * @param string|array $mSelect SELECT clause array or string.

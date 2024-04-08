@@ -271,6 +271,8 @@ test('Table » Find one', function() use (&$dbpost)
 	expect($dbpost->findRow('title', 5))->toBeFalse();
 	expect($dbpost->findAssoc('title', 1)['title'])->toBe('First post');
 	expect($dbpost->findAssoc('title', 5))->toBeFalse();
+	expect($dbpost->findId('title', 'May the forth be with you'))->toBe(4);
+	expect($dbpost->findId('title', 'Not found title'))->toBe(0);
 });
 
 test('Table » Find rows', function() use (&$dbpost)
@@ -313,7 +315,7 @@ test('Table » getSelectableArray', function() use (&$dbpost)
 
 test('Db » getSavedQueries', function() use (&$db)
 {
-	expect($db->getSavedQueries())->toHaveCount(41);
+	expect($db->getSavedQueries())->toHaveCount(43);
 });
 
 afterAll(function () use ($dbfile)

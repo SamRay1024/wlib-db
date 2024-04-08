@@ -600,7 +600,7 @@ class Query
 	 *
 	 * @param string $sColumn Column name.
 	 * @param mixed $mValue Value to insert/update.
-	 * @param integer $iType Value type among PDO::PARAM_* constants.
+	 * @param integer $iType Column type among PDO::PARAM_* constants.
 	 * @return self
 	 */
 	public function set(string $sColumn, mixed $mValue, int $iType = PDO::PARAM_STR): self
