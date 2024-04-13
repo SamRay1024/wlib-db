@@ -293,8 +293,8 @@ abstract class Table
 				unset($aFields[$sColName]);
 				continue;
 			}
-
-			if ($mValue == 'NOW()' && $this->oDb->getDriver() == 'sqlite')
+			
+			if ($mValue === 'NOW()' && $this->oDb->getDriver() === 'sqlite')
 			{
 				if (is_null($sNow))
 					$sNow = (new \DateTime())->format(static::SQLITE_DATE_FORMAT);
@@ -834,7 +834,8 @@ abstract class Table
 
 		$aFilter = self::$aFiltersTemplates[$sTemplateName];
 
-		switch ($sTemplateName) {
+		switch ($sTemplateName)
+		{
 			case 'validate_enum':
 				static::makeFilterValidateEnum($aFilter, $mVars);
 				break;
