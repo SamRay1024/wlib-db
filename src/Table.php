@@ -142,7 +142,7 @@ abstract class Table
 	 * Database connection.
 	 * @var Db
 	 */
-	private $oDb = null;
+	protected $oDb = null;
 
 	/**
 	 * Array of fields.
