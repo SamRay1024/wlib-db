@@ -142,7 +142,7 @@ class Db
 	 * Array of saved queries.
 	 * @var array
 	 */
-	private $aQueries = null;
+	private $aQueries = [];
 
 	/**
 	 * Query counter.
