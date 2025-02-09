@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /* ==== LICENCE AGREEMENT =====================================================
  *
@@ -39,6 +39,7 @@ namespace wlib\Db;
 use Exception;
 use \PDO, \PDOStatement;
 use UnexpectedValueException;
+use wlib\Tools\Hooks;
 
 /**
  * Database access class.
@@ -717,6 +718,8 @@ class Db
 	{
 		if ($this->bSaveQueries)
 			$this->startTimer();
+
+		Hooks::do('wlib.db.execute.before', ['timer_start' => $this->iTimerStart]);
 	}
 
 	/**
@@ -727,7 +730,16 @@ class Db
 	 */
 	private function triggerAfterExecute(string $sSQL, array $aParams = null)
 	{
+		$iRunningTime = $this->stopTimer();
+
 		if ($this->bSaveQueries)
-			$this->aQueries[] = [$sSQL, $aParams, $this->stopTimer()];
+			$this->aQueries[] = [$sSQL, $aParams, $iRunningTime];
+
+		Hooks::do('wlib.db.execute.after', [
+			'sql' => $sSQL,
+			'bindings' => $aParams,
+			'timer_start'	=> $this->iTimerStart,
+			'running_time' => $iRunningTime
+		]);
 	}
 }
