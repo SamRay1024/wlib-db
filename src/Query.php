@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /* ==== LICENCE AGREEMENT =====================================================
  *
@@ -985,7 +985,7 @@ class Query
 	 */
 	private function parseValue(&$mValue)
 	{
-		if (strtolower($mValue) == 'now()' && $this->oDb->getDriver() == Db::DRV_SQLTE)
+		if (strtolower((string) $mValue) == 'now()' && $this->oDb->getDriver() == Db::DRV_SQLTE)
 		{
 			$mValue = (new DateTime())->format('Y-m-d H:i:s');
 		}

@@ -476,6 +476,7 @@ class Db
 				);
 
 			case self::DRV_PGSQL:
+				// TODO : getAutoIncrement for PostgreSQL
 				break;
 
 			case self::DRV_SQLTE:
@@ -726,9 +727,9 @@ class Db
 	 * Trigger operations after executing a query.
 	 *
 	 * @param string $sSQL SQL code of the executed query.
-	 * @param array|null $aParams Query parameters.
+	 * @param array $aParams Query parameters.
 	 */
-	private function triggerAfterExecute(string $sSQL, array $aParams = null)
+	private function triggerAfterExecute(string $sSQL, array $aParams = [])
 	{
 		$iRunningTime = $this->stopTimer();
 
