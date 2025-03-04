@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /* ==== LICENCE AGREEMENT =====================================================
  *
@@ -194,6 +194,12 @@ abstract class Table
 	];
 
 	/**
+	 * Columns definitions.
+	 * @var array
+	 */
+	protected $aColumns = [];
+
+	/**
 	 * Constructor.
 	 *
 	 * @param Db $oDb Database connection.
@@ -201,6 +207,14 @@ abstract class Table
 	public function __construct(Db $oDb)
 	{
 		$this->oDb = $oDb;
+
+		self::$aFiltersTemplates['sanitize_string'] = [
+			'filter' => FILTER_CALLBACK,
+			'options' => function ($value)
+			{
+				return strip_tags(htmlspecialchars_decode($value, ENT_QUOTES));
+			}
+		];
 	}
 
 	/**
@@ -347,7 +361,10 @@ abstract class Table
 
 		foreach ($aReadyFields as $sColName => $mValue)
 		{
-			$insert->set($sColName, $mValue);
+			$insert->set(
+				$sColName, $mValue,
+				$this->aColumns[$sColName] ?? \PDO::PARAM_STR
+			);
 		}
 
 		$mAdded = $insert->run();
@@ -402,7 +419,10 @@ abstract class Table
 
 		foreach ($aReadyFields as $sColName => $mValue)
 		{
-			$oQuery->set($sColName, $mValue);
+			$oQuery->set(
+				$sColName, $mValue,
+				$this->aColumns[$sColName] ?? \PDO::PARAM_STR
+			);
 		}
 
 		$mUpdated = $oQuery->run();
@@ -605,7 +625,7 @@ abstract class Table
 	public function findId(string $sColumn, mixed $mValue, int $iType = \PDO::PARAM_STR): int
 	{
 		if ($sColumn == '')
-			return false;
+			return 0;
 
 		$oQuery = $this->oDb->query();
 
@@ -862,9 +882,6 @@ abstract class Table
 		if (is_array($mSelect))
 			$mSelect = implode(', ', $mSelect);
 
-		if ($mSelect == '')
-			return false;
-
 		return $this->oDb->query()
 			->select($mSelect)
 			->from(static::TABLE_NAME)
@@ -893,9 +910,6 @@ abstract class Table
 	{
 		if (is_array($mSelect))
 			$mSelect = implode(', ', $mSelect);
-
-		if ($mSelect == '')
-			return false;
 
 		if (is_array($mWhere))
 			$mWhere = implode(' AND ', $mWhere);
