@@ -256,7 +256,10 @@ class Query
 				if (is_array($this->oStatement))
 					return array_sum($this->oStatement);
 
-				return $this->oStatement->rowCount();
+				return (is_int($this->oStatement)
+					? $this->oStatement
+					: $this->oStatement->rowCount()
+				);
 		}
 
 		return false;
