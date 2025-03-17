@@ -524,7 +524,7 @@ abstract class Table
 
 		$mRestored = $this->oDb->query()
 			->update(static::TABLE_NAME)
-			->set(static::COL_DELETED_AT_NAME, 'NULL')
+			->set(static::COL_DELETED_AT_NAME . ' = NULL', null)
 			->where(static::COL_ID_NAME . ' = :id')
 			->setParameter('id', $id, \PDO::PARAM_INT)
 			->run()
