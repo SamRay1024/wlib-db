@@ -55,100 +55,107 @@ class Query
 	/**
 	 * Identifies SELECT queries.
 	 */
-	const TYPE_SELECT = 0;
+	const TYPE_SELECT = 'sel';
 
 	/**
 	 * Identifies INSERT queries.
 	 */
-	const TYPE_INSERT = 1;
+	const TYPE_INSERT = 'ins';
 
 	/**
 	 * Identifies UPDATE queries.
 	 */
-	const TYPE_UPDATE = 2;
+	const TYPE_UPDATE = 'upd';
 
 	/**
 	 * Identifies DELETE queries.
 	 */
-	const TYPE_DELETE = 3;
+	const TYPE_DELETE = 'del';
 
 	/**
 	 * Identifies TRUNCATE queries.
 	 */
-	const TYPE_TRUNCATE = 4;
+	const TYPE_TRUNCATE = 'tru';
 
 	/**
 	 * Identifies REPLACE queries.
 	 */
-	const TYPE_REPLACE = 5;
+	const TYPE_REPLACE = 'rep';
 
 	/**
 	 * Identifies raw queries.
 	 */
-	const TYPE_RAW = 6;
+	const TYPE_RAW = 'raw';
 
 	/**
 	 * Identifies queries ready for execution.
 	 */
-	const STATE_READY = 10;
+	const STATE_READY = 'rdy';
 
 	/**
 	 * Identifies queries not ready.
 	 */
-	const STATE_NOTREADY = 11;
+	const STATE_NOTREADY = 'ndy';
 
 	/**
 	 * Error when calling methods which need query to be executed before.
 	 */
 	const ERR_STATEMENT_NOT_FOUND = 'Statement not found. Run query first.';
-
-	/**
-	 * Database connection.
-	 * @var Db
-	 */
-	private $oDb = null;
-
+	
 	/**
 	 * Query type.
-	 * @var integer
+	 * @var string
 	 */
-	private $iType = null;
-
+	private $sType = null;
+	
 	/**
 	 * Query state.
-	 * @var integer
+	 * @var string
 	 */
-	private $iState = self::STATE_NOTREADY;
+	private $sState = self::STATE_NOTREADY;
 
 	/**
 	 * SQL query clause tree.
 	 * @var Tree
 	 */
 	private $oSQL = null;
-
+	
 	/**
 	 * SQL query string.
 	 * @var string
 	 */
 	private $sSQL = '';
-
+	
 	/**
 	 * Query parameters.
 	 * @var array
 	 */
 	private $aParameters = array();
-
+	
 	/**
 	 * Types of query parameters.
 	 * @var array
 	 */
 	private $aParametersTypes = array();
-
+	
 	/**
 	 * Prepared query.
 	 * @var PDOStatement
 	 */
 	private $oStatement = null;
+	
+	/**
+	 * Current datetime for NOW() auto replacement.
+	 *
+	 * @var DateTime
+	 */
+	private $oNow = null;
+	
+	/**
+	 * Database connection.
+	 * @var Db
+	 */
+	private $oDb = null;
 
 	/**
 	 * Create a query.
@@ -226,14 +233,19 @@ class Query
 		if (!is_null($this->oStatement))
 			$this->oStatement->closeCursor();
 
+		// Must be done before final parseValue() to set the query as ready
+		$sSQL = $this->getSQL();
+
+		// This is done as late as possible for NOW() replacements
 		array_walk($this->aParameters, [$this, 'parseValue']);
 
 		$this->oStatement = null;
 		$this->oStatement = $this->oDb->execute(
-			$this->getSQL(), $this->aParameters, $this->aParametersTypes
+			$sSQL, $this->aParameters, $this->aParametersTypes
 		);
+		$this->oNow = null;
 
-		switch ($this->iType)
+		switch ($this->sType)
 		{
 			case self::TYPE_INSERT:
 			case self::TYPE_REPLACE:
@@ -349,8 +361,8 @@ class Query
 	 */
 	public function select(string|array $mSelect): self
 	{
-		$this->iType	= self::TYPE_SELECT;
-		$this->iState	= self::STATE_NOTREADY;
+		$this->sType	= self::TYPE_SELECT;
+		$this->sState	= self::STATE_NOTREADY;
 
 		$this->oSQL->select(is_array($mSelect) ? $mSelect : func_get_args());
 
@@ -373,7 +385,7 @@ class Query
 	 */
 	public function from(string|Query $mFrom, $sAlias = ''): self
 	{
-		$this->iState = self::STATE_NOTREADY;
+		$this->sState = self::STATE_NOTREADY;
 
 		$sAliasPattern = '`([a-zA-Z0-9_]+)\s+as\s+([a-zA-Z0-9_]+)`Ui';
 		if (is_string($mFrom) && preg_match($sAliasPattern, trim($mFrom), $matches))
@@ -454,7 +466,7 @@ class Query
 	{
 		if (count($aJoints))
 		{
-			$this->iState = self::STATE_NOTREADY;
+			$this->sState = self::STATE_NOTREADY;
 			$this->oSQL->joins(array_merge($this->oSQL->joins, $aJoints));
 		}
 		
@@ -471,7 +483,7 @@ class Query
 	 */
 	public function where(string $sWhere): self
 	{
-		$this->iState = self::STATE_NOTREADY;
+		$this->sState = self::STATE_NOTREADY;
 
 		$this->oSQL->where($sWhere);
 
@@ -494,7 +506,7 @@ class Query
 	 */
 	public function groupBy(string|array $mGroupBy): self
 	{
-		$this->iState = self::STATE_NOTREADY;
+		$this->sState = self::STATE_NOTREADY;
 
 		$mGroupBy = (is_array($mGroupBy) ? $mGroupBy : func_get_args());
 		$mGroupBy = implode(', ', $mGroupBy);
@@ -519,7 +531,7 @@ class Query
 	 */
 	public function orderBy(string|array $mOrderBy): self
 	{
-		$this->iState = self::STATE_NOTREADY;
+		$this->sState = self::STATE_NOTREADY;
 
 		$mOrderBy = (is_array($mOrderBy) ? $mOrderBy : func_get_args());
 		$mOrderBy = implode(', ', $mOrderBy);
@@ -539,7 +551,7 @@ class Query
 	 */
 	public function having(string $sHaving): self
 	{
-		$this->iState = self::STATE_NOTREADY;
+		$this->sState = self::STATE_NOTREADY;
 
 		$this->oSQL->having($sHaving);
 
@@ -555,7 +567,7 @@ class Query
 	 */
 	public function limit(int|string $mRowCount, int $iOffset = 0): self
 	{
-		$this->iState = self::STATE_NOTREADY;
+		$this->sState = self::STATE_NOTREADY;
 
 		$this->oSQL->limit(
 			$iOffset > 0
@@ -574,8 +586,8 @@ class Query
 	 */
 	public function update(string $sTableName): self
 	{
-		$this->iType	= self::TYPE_UPDATE;
-		$this->iState	= self::STATE_NOTREADY;
+		$this->sType	= self::TYPE_UPDATE;
+		$this->sState	= self::STATE_NOTREADY;
 
 		$this->oSQL->update($sTableName);
 
@@ -590,8 +602,8 @@ class Query
 	 */
 	public function insert(string $sTableName): self
 	{
-		$this->iType	= self::TYPE_INSERT;
-		$this->iState	= self::STATE_NOTREADY;
+		$this->sType	= self::TYPE_INSERT;
+		$this->sState	= self::STATE_NOTREADY;
 
 		$this->oSQL->insert($sTableName);
 
@@ -603,12 +615,12 @@ class Query
 	 *
 	 * @param string $sColumn Column name.
 	 * @param mixed $mValue Value to insert/update.
-	 * @param integer $iType Column type among PDO::PARAM_* constants.
+	 * @param integer $iPDOType Column type among PDO::PARAM_* constants.
 	 * @return self
 	 */
-	public function set(string $sColumn, mixed $mValue, int $iType = PDO::PARAM_STR): self
+	public function set(string $sColumn, mixed $mValue, int $iPDOType = PDO::PARAM_STR): self
 	{
-		$this->iState = self::STATE_NOTREADY;
+		$this->sState = self::STATE_NOTREADY;
 
 		$aValues = $this->oSQL->values;
 
@@ -617,8 +629,9 @@ class Query
 				(is_string($mValue) && strpos($mValue, ':') !== 0 && $mValue != '?')
 				|| !is_string($mValue)
 			)
+			&& !($mValue instanceof Literal)
 		) {
-			$this->setParameter(':'.$sColumn, $mValue, $iType);
+			$this->setParameter(':'.$sColumn, $mValue, $iPDOType);
 			$mValue = ':'.$sColumn;
 		}
 
@@ -660,8 +673,8 @@ class Query
 	 */
 	public function delete(string $sTableName): self
 	{
-		$this->iType	= self::TYPE_DELETE;
-		$this->iState	= self::STATE_NOTREADY;
+		$this->sType	= self::TYPE_DELETE;
+		$this->sState	= self::STATE_NOTREADY;
 
 		$this->oSQL->delete($sTableName);
 
@@ -676,8 +689,8 @@ class Query
 	 */
 	public function truncate(string $sTableName): self
 	{
-		$this->iType	= self::TYPE_TRUNCATE;
-		$this->iState	= self::STATE_NOTREADY;
+		$this->sType	= self::TYPE_TRUNCATE;
+		$this->sState	= self::STATE_NOTREADY;
 
 		$this->oSQL->truncate($sTableName);
 
@@ -692,8 +705,8 @@ class Query
 	 */
 	public function raw(string $sSQL): self
 	{
-		$this->iType	= self::TYPE_RAW;
-		$this->iState	= self::STATE_NOTREADY;
+		$this->sType	= self::TYPE_RAW;
+		$this->sState	= self::STATE_NOTREADY;
 
 		$this->oSQL->raw($sSQL);
 
@@ -705,14 +718,14 @@ class Query
 	 *
 	 * @param string|integer $mKey Parameter name or index.
 	 * @param mixed $mValue Parameter value.
-	 * @param int|null $sType One of the PDO::PARAM_* constants.
+	 * @param int|null $iPDOType One of the PDO::PARAM_* constants.
 	 * @return self
 	 */
 	public function setParameter(
-		string|int $mKey, mixed $mValue, int|null $iType = PDO::PARAM_STR
+		string|int $mKey, mixed $mValue, int|null $iPDOType = PDO::PARAM_STR
 	): self
 	{
-		$this->aParametersTypes[$mKey] = $iType;
+		$this->aParametersTypes[$mKey] = $iPDOType;
 		$this->aParameters[$mKey] = $mValue;
 
 		return $this;
@@ -743,13 +756,13 @@ class Query
 	public function getSQL(): string|array
 	{
 		// Requête non valide on arrête ici
-		if ($this->iState == self::STATE_READY)
+		if ($this->sState == self::STATE_READY)
 			return $this->sSQL;
 
 		$sQuery = '';
 
 		// Génération selon le type
-		switch ($this->iType)
+		switch ($this->sType)
 		{
 			case self::TYPE_SELECT:
 				$sQuery = $this->getSQLForSelect();
@@ -771,7 +784,7 @@ class Query
 				break;
 		}
 
-		$this->iState = self::STATE_READY;
+		$this->sState = self::STATE_READY;
 		$this->sSQL = $sQuery;
 
 		return $sQuery;
@@ -784,7 +797,7 @@ class Query
 	 */
 	public function display()
 	{
-		if ($this->iType != self::TYPE_SELECT)
+		if ($this->sType != self::TYPE_SELECT)
 		{
 			echo '<p>Show only works with select statements.</p>';
 			return;
@@ -825,7 +838,7 @@ class Query
 	 */
 	private function join(string $sJoinMode, string $sJoinTable, string $sJoinConditions): self
 	{
-		$this->iState = self::STATE_NOTREADY;
+		$this->sState = self::STATE_NOTREADY;
 
 		if (!is_array($this->oSQL->joins))
 			$this->oSQL->joins(array());
@@ -854,7 +867,7 @@ class Query
 			if ($aFromClause['from'] instanceof self)
 				$sQuery .= sprintf(
 					' FROM (%s) AS %s',
-					$this->esc($aFromClause['from']),
+					$this->esc((string) $aFromClause['from']),
 					$this->esc($aFromClause['alias'], false)
 				);
 	
@@ -902,10 +915,26 @@ class Query
 
 		foreach ($aValues as $sColName => &$mValue)
 		{
-			$aColumns[] = $this->esc($sColName);
-			$this->parseValue($mValue);
-		}
+			if (!is_null($mValue))
+			{
+				$aColumns[] = $this->esc($sColName);
+				$this->parseValue($mValue);
+			}
+			else
+			{
+				$aAssignment = explode('=', $sColName, 2);
 
+				if (count($aAssignment) < 2)
+					throw new UnexpectedValueException(
+						'"'.$sColName.'" is not a valid assignement.'
+					);
+					
+				$aColumns[] = $this->esc(trim($aAssignment[0]));
+				$mValue = trim($aAssignment[1]);
+				$this->parseValue($mValue);
+			}
+		}
+		
 		return
 			'INSERT INTO '. $this->esc($this->oSQL->insert)
 			.'('. implode(', ', $aColumns) .')'
@@ -988,9 +1017,21 @@ class Query
 	 */
 	private function parseValue(&$mValue)
 	{
-		if (strtolower((string) $mValue) == 'now()' && $this->oDb->getDriver() == Db::DRV_SQLTE)
+		if ($mValue instanceof Literal)
 		{
-			$mValue = (new DateTime())->format('Y-m-d H:i:s');
+			$mValue = $mValue->getSql();
+			return;
+		}
+		
+		if ($this->sState == self::STATE_READY)
+		{
+			if (strtolower((string) $mValue) == 'now()')
+			{
+				if (is_null($this->oNow))
+					$this->oNow = new DateTime();
+	
+				$mValue = $this->oNow->format('Y-m-d H:i:s.u');
+			}
 		}
 	}
 }
