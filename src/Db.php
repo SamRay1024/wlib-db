@@ -743,4 +743,15 @@ class Db
 			'running_time' => $iRunningTime
 		]);
 	}
+	
+	/**
+	 * Create a literal which won't be escaped in the final SQL code.
+	 *
+	 * @param string $sSql SQL code to keep unescaped.
+	 * @return Literal
+	 */
+	public static function literal(string $sSql)
+	{
+		return new Literal($sSql);
+	}
 }
