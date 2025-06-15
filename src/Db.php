@@ -126,6 +126,12 @@ class Db
 	 * @var integer
 	 */
 	private $iTimeout = 0;
+	
+	/**
+	 * Connection default charset, when applicable.
+	 * @var string
+	 */
+	private $sCharset = '';
 
 	/**
 	 * Database connection instance.
@@ -164,16 +170,17 @@ class Db
 	 *
 	 * @param string $sDriver Driver among `self::DRV_*`.
 	 * @param string $sDatabase Database name (or pathname for SQLite).
-	 * @param string|null $sUsername Username (except for SQLite).
-	 * @param string|null $sPassword User password (except for SQLite).
-	 * @param string|null $sHost Server IP or URL. 'localhost' by default (useless for SQLite).
-	 * @param integer|null $iPort Connection port (useless for SQLite).
-	 * @param integer|null $iTimeout Connection timeout in seconds (useless for SQLite).
+	 * @param string $sUsername Username (except for SQLite).
+	 * @param string $sPassword User password (except for SQLite).
+	 * @param string $sHost Server IP or URL. 'localhost' by default (useless for SQLite).
+	 * @param integer $iPort Connection port (useless for SQLite).
+	 * @param string $sCharset Connection charset (useless for SQLite).
+	 * @param integer $iTimeout Connection timeout in seconds (useless for SQLite).
 	 * @return self
 	 */
 	public function __construct(
-		string $sDriver, string $sDatabase, string $sUsername = null, string $sPassword = null,
-		string $sHost = null, int $iPort = null, int $iTimeout = null
+		string $sDriver, string $sDatabase, string $sUsername = '', string $sPassword = '',
+		string $sHost = '', int $iPort = 0, string $sCharset = '', int $iTimeout = 0
 	) {
 		if (!in_array($sDriver, [self::DRV_MYSQL, self::DRV_PGSQL, self::DRV_SQLTE]))
 			throw new UnexpectedValueException(
@@ -191,6 +198,7 @@ class Db
 		$this->sPassword	= $sPassword;
 		$this->sHost		= $sHost;
 		$this->iPort		= (int) $iPort;
+		$this->sCharset		= (string) $sCharset;
 		$this->iTimeout		= (int) $iTimeout;
 	}
 
@@ -649,7 +657,13 @@ class Db
 		switch ($this->sDriver)
 		{
 			case self::DRV_MYSQL:
+				empty($this->sCharset) or $args['charset'] = 'charset='.$this->sCharset;
+
 			case self::DRV_PGSQL:
+
+				if ($this->sDriver == self::DRV_PGSQL && !empty($this->sCharset))
+					$args['charset'] = "options='--client_encoding=".$this->sCharset."'";
+
 				empty($this->sHost)		or $args[] = 'host='. $this->sHost;
 				empty($this->iPort)		or $args[] = 'port='. $this->iPort;
 				empty($this->sDatabase)	or $args[] = 'dbname='. $this->sDatabase;
