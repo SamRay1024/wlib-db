@@ -39,7 +39,29 @@ namespace wlib\Db;
 /**
  * A literal will not be escaped in queries.
  * 
- * You must be careful when you use literal to keep you SQL safe.
+ * ⚠️ **SECURITY WARNING** ⚠️
+ * 
+ * This class bypasses all SQL escaping mechanisms. Use with extreme caution!
+ * 
+ * **NEVER** use this class with user-supplied data as it can lead to SQL injection
+ * vulnerabilities. Only use Literal with:
+ * 
+ * - Hardcoded SQL expressions
+ * - Internally validated data
+ * - SQL functions (NOW(), COUNT(), etc.)
+ * 
+ * **Bad Example (VULNERABLE)**:
+ * 
+ * ```php
+ * $query->set('column', Db::literal($_POST['value'])); // DANGEROUS!
+ * ```
+ * 
+ * **Good Example (SAFE)**:
+ * 
+ * ```php
+ * $query->set('column', Db::literal('NOW()')); // OK - hardcoded function
+ * $query->set('total', Db::literal('price * quantity')); // OK - known columns
+ * ```
  *
  * @author Cédric Ducarre
  * @since 24/05/2025

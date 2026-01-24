@@ -699,7 +699,33 @@ class Query
 
 	/**
 	 * Define a raw SQL query.
-	 * 
+	 *
+	 * ⚠️ **SECURITY WARNING** ⚠️
+	 *
+	 * This method allows execution of raw SQL without any validation or escaping.
+	 * Use with extreme caution as it can lead to SQL injection vulnerabilities.
+	 *
+	 * **NEVER** use this method with user-supplied data. Always prefer:
+	 * - Query builder methods (select(), where(), etc.)
+	 * - Parameterized queries with setParameter()
+	 * - Prepared statements
+	 *
+	 * **Acceptable use cases only**:
+	 * - Complex SQL functions not supported by the query builder
+	 * - Database-specific optimizations
+	 * - Administrative queries with hardcoded values
+	 *
+	 * **Bad Example (VULNERABLE)**:
+	 * ```php
+	 * $query->raw("SELECT * FROM users WHERE name = '{$_POST['name']}'"); // DANGEROUS!
+	 * ```
+	 *
+	 * **Good Example (SAFE)**:
+	 * ```php
+	 * $query->raw("SELECT COUNT(*) FROM users WHERE active = 1"); // OK - hardcoded
+	 * $query->select('*')->from('users')->where('active = 1'); // BETTER - query builder
+	 * ```
+	 *
 	 * @param string $sSQL Query SQL code.
 	 * @return self
 	 */
