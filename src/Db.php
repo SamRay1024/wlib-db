@@ -164,6 +164,18 @@ class Db
 	private $iTimerStart = 0;
 
 	/**
+	 * Cache for table metadata (columns, auto_increment, etc.).
+	 * @var array
+	 */
+	private $aTableMetadataCache = [];
+
+	/**
+	 * Cache for table existence checks.
+	 * @var array
+	 */
+	private $aTableExistsCache = [];
+
+	/**
 	 * Configure database connection.
 	 *
 	 * Connection is opened by a call to `connect()` or at the first query ran.
@@ -223,11 +235,23 @@ class Db
 	}
 
 	/**
-	 * Close the bar :-(
+	 * Close the bar :-( and clear caches.
 	 */
 	public function close()
 	{
 		$this->oPdo = null;
+		$this->clearCaches();
+	}
+
+	/**
+	 * Clear metadata and existence caches.
+	 * 
+	 * Useful when tables are modified outside of this instance.
+	 */
+	public function clearCaches()
+	{
+		$this->aTableMetadataCache = [];
+		$this->aTableExistsCache = [];
 	}
 
 	/**
@@ -323,7 +347,32 @@ class Db
 
 	/**
 	 * Secure a value for an SQL query.
+	 *
+	 * ⚠️ **SECURITY WARNING** ⚠️
+	 *
+	 * This method is exposed for compatibility but should be used with caution.
+	 * For new code, prefer parameterized queries with prepared statements.
+	 *
+	 * **Why avoid this method:**
 	 * 
+	 * - Manual quoting is error-prone and can lead to SQL injection if misused
+	 * - Does not handle identifier quoting (table/column names)
+	 * - May not handle all edge cases properly
+	 *
+	 * **Preferred alternatives:**
+	 * 
+	 * ```php
+	 * // ✅ GOOD - Use query builder with parameters
+	 * $query->select('*')->from('users')->where('name = :name')
+	 *       ->setParameter('name', $userInput)->run();
+	 *
+	 * // ✅ GOOD - Use prepared statements directly
+	 * $stmt = $db->execute('SELECT * FROM users WHERE name = ?', [$userInput]);
+	 *
+	 * // ❌ AVOID - Manual quoting (error-prone)
+	 * $db->execute('SELECT * FROM users WHERE name = '. $db->quote($userInput));
+	 * ```
+	 *
 	 * @param mixed $mValue Value to secure.
 	 * @param integer $iType Type to apply among PDO::PARAM_*.
 	 */
@@ -408,12 +457,17 @@ class Db
 
 	/**
 	 * Checks whether a table exists in database.
-	 * 
+	 *
+	 * Uses caching to avoid repeated expensive queries for the same table.
+	 *
 	 * @param string $sTableName Table name.
 	 * @return boolean
 	 */
 	public function isTable(string $sTableName): bool
 	{
+		if (isset($this->aTableExistsCache[$sTableName]))
+			return $this->aTableExistsCache[$sTableName];
+
 		$oQuery = $this->query();
 
 		switch ($this->sDriver)
@@ -437,7 +491,7 @@ class Db
 						. 'SELECT table_name FROM information_schema.tables '
 						. 'WHERE table_schema LIKE :database '
 						. 'AND table_type LIKE "BASE TABLE" '
-						. 'AND table_name` = :tablename'
+						. 'AND table_name = :tablename'
 						. ')'
 					)
 					->setParameter('database', $this->sDatabase);
@@ -451,12 +505,16 @@ class Db
 				);
 				break;
 		}
-		
+
 		$oQuery
 			->setParameter('tablename', $sTableName, PDO::PARAM_STR)
 			->run();
-		
-		return ($oQuery->fetchColumn() > 0);
+
+		$bExists = ($oQuery->fetchColumn() > 0);
+
+		$this->aTableExistsCache[$sTableName] = $bExists;
+
+		return $bExists;
 	}
 
 	/**
@@ -530,23 +588,37 @@ class Db
 
 	/**
 	 * Get columns from a table.
-	 * 
+	 *
+	 * Uses caching to avoid repeated expensive metadata queries for the same table.
+	 * This significantly improves performance when the same table is accessed multiple times.
+	 *
 	 * @param string $sTable Table name.
 	 * @param string $sColName Filter on a specific column.
 	 * @return array
 	 */
 	public function getColumns(string $sTable, string $sColName = ''): array
 	{
-		$oQuery = $this->query();
+		// Check cache first
+		if (isset($this->aTableMetadataCache[$sTable])) {
+			$aColumns = $this->aTableMetadataCache[$sTable];
 
+			// Return specific column if requested
+			if ($sColName && isset($aColumns[$sColName])) {
+				return $aColumns[$sColName];
+			}
+
+			return $aColumns;
+		}
+
+		$oQuery = $this->query();
 		$aColumns = [];
 
 		switch ($this->sDriver)
 		{
-			case self::DRV_PGSQL:
+			case self::DRV_MYSQL:
 				$sWhereCol = ($sColName ? ' WHERE Field = :colname' : '');
 				$oQuery
-					->raw('SHOW COLUMNS FROM ' . $oQuery->esc($sTable) . $sWhereCol)
+					->raw('SHOW COLUMNS FROM '. $oQuery->esc($sTable) .$sWhereCol)
 					->setParameter('colname', $sColName)
 					->run();
 
@@ -581,7 +653,12 @@ class Db
 				break;
 		}
 
-		return ($sColName && isset($aColumns[$sColName]) ? $aColumns[$sColName] : $aColumns);
+		$this->aTableMetadataCache[$sTable] = $aColumns;
+
+		if ($sColName && isset($aColumns[$sColName]))
+			return $aColumns[$sColName];
+
+		return $aColumns;
 	}
 
 	/**
