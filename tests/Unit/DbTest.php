@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 use wlib\Db\Db;
 use wlib\Db\Table;
@@ -9,7 +9,7 @@ $dbfile = __DIR__ .'/tmp/db.sqlite';
 createDir(dirname($dbfile), 0755);
 
 dataset('databases', [
-	Db::DRV_SQLTE => new Db(Db::DRV_SQLTE, $dbfile),
+	Db::DRV_SQLTE => new Db(Db::DRV_SQLTE, $dbfile /* or ':memory:' */),
 	Db::DRV_MYSQL => new Db(Db::DRV_MYSQL, 'test', 'root', '', '127.0.0.1', 3306)
 ]);
 
@@ -36,7 +36,7 @@ test('Db » __construct » Database error', function() { new Db(Db::DRV_MYSQL, '
 ->throws(Exception::class);
 
 
-test('Db » connect', function(&$db) use ($dbfile)
+test('Db » connect', function(&$db)
 {
 	$db->connect();
 	$db->saveQueries();
@@ -99,6 +99,7 @@ test('Db » INSERT » Explicit parameters', function(&$db)
 test('Db » INSERT » Implicit parameters', function(&$db)
 {
 	$query = $db->query();
+
 	$id = $query
 		->insert('post')
 		->values(
@@ -364,6 +365,7 @@ test('Table » Find rows', function(&$db)
 })
 ->with('databases');
 
+
 test('Table » Find assocs', function(&$db)
 {
 	$dbpost = $db->table('post');
@@ -414,6 +416,8 @@ test('Db » DROP', function(&$db)
 {
 	$db->execute('DROP TABLE post');
 	$db->execute('DROP TABLE comment');
+
+	$db->clearCaches();
 
 	expect($db->isTable('post'))->toBeFalse();
 	expect($db->isTable('comment'))->toBeFalse();
