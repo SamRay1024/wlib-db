@@ -288,7 +288,10 @@ class Query
 		if ($this->oStatement === null)
 			throw new LogicException(self::ERR_STATEMENT_NOT_FOUND);
 		
-		return $this->oStatement->rowCount();
+		return (is_int($this->oStatement)
+			? $this->oStatement
+			: $this->oStatement->rowCount()
+		);
 	}
 
 	/**
@@ -626,7 +629,13 @@ class Query
 
 		if (!is_null($mValue)
 			&& (
-				(is_string($mValue) && strpos($mValue, ':') !== 0 && $mValue != '?')
+				(
+					is_string($mValue) && strpos($mValue, ':') !== 0 && $mValue != '?'
+					&& !(
+						strtolower($mValue) == 'now()'
+						&& $this->oDb->getDriver() == Db::DRV_MYSQL
+					)
+				)
 				|| !is_string($mValue)
 			)
 			&& !($mValue instanceof Literal)
@@ -960,7 +969,7 @@ class Query
 				$this->parseValue($mValue);
 			}
 		}
-		
+
 		return
 			'INSERT INTO '. $this->esc($this->oSQL->insert)
 			.'('. implode(', ', $aColumns) .')'
@@ -1051,8 +1060,9 @@ class Query
 		
 		if ($this->sState == self::STATE_READY)
 		{
-			if (strtolower((string) $mValue) == 'now()')
-			{
+			if ($this->oDb->getDriver() == Db::DRV_SQLTE
+				&& strtolower((string) $mValue) == 'now()'
+			) {
 				if (is_null($this->oNow))
 					$this->oNow = new DateTime();
 	

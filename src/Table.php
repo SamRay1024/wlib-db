@@ -297,8 +297,6 @@ abstract class Table
 			$aFields[static::COL_UPDATED_AT_NAME] = 'NOW()';
 		}
 
-		$sNow = null;
-
 		foreach ($aFields as $sColName => &$mValue)
 		{
 			// Null fields are ignored (to put a field at null, you have to use 'NULL' string)
@@ -306,15 +304,7 @@ abstract class Table
 			{
 				unset($aFields[$sColName]);
 				continue;
-			}
-			
-			if ($mValue === 'NOW()' && $this->oDb->getDriver() === 'sqlite')
-			{
-				if (is_null($sNow))
-					$sNow = (new \DateTime())->format(static::SQLITE_DATE_FORMAT);
-
-				$mValue = $sNow;
-			}
+			}			
 		}
 
 		return $aFields;
