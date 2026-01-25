@@ -616,11 +616,15 @@ class Db
 		switch ($this->sDriver)
 		{
 			case self::DRV_MYSQL:
-				$sWhereCol = ($sColName ? ' WHERE Field = :colname' : '');
-				$oQuery
-					->raw('SHOW COLUMNS FROM '. $oQuery->esc($sTable) .$sWhereCol)
-					->setParameter('colname', $sColName)
-					->run();
+				$oQuery->raw(
+					'SHOW COLUMNS FROM '. $oQuery->esc($sTable)
+					.($sColName ? ' WHERE Field = :colname' : '')
+				);
+
+				if ($sColName)
+					$oQuery->setParameter('colname', $sColName);
+					
+				$oQuery->run();
 
 				while ($oCol = $oQuery->fetch())
 					$aColumns[$oCol->Field] = [
