@@ -147,7 +147,7 @@ class Db
 
 	/**
 	 * Array of saved queries.
-	 * @var array
+	 * @var array<string>
 	 */
 	private $aQueries = [];
 
@@ -165,13 +165,13 @@ class Db
 
 	/**
 	 * Cache for table metadata (columns, auto_increment, etc.).
-	 * @var array
+	 * @var array<array>
 	 */
 	private $aTableMetadataCache = [];
 
 	/**
 	 * Cache for table existence checks.
-	 * @var array
+	 * @var array<bool>
 	 */
 	private $aTableExistsCache = [];
 
@@ -436,7 +436,7 @@ class Db
 	/**
 	 * Save the executed queries.
 	 * 
-	 * @param integer $bActive `true` by default, `false` to disable.
+	 * @param bool $bActive `true` by default, `false` to disable.
 	 */
 	public function saveQueries(bool $bActive = true)
 	{
@@ -562,7 +562,7 @@ class Db
 	 *
 	 * @param string $sTableName Table name to check.
 	 * @param string $sFieldName Field name to check.
-	 * @param mixed $sValue Value to search.
+	 * @param mixed $mValue Value to search.
 	 * @return boolean|null	`null` in case of error.
 	 */
 	public function exists(string $sTableName, string $sFieldName, mixed $mValue): bool|null
