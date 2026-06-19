@@ -1,18 +1,50 @@
 # wlib/db
 
-Ensemble de classes PHP pour interagir avec vos bases de données MySQL, SQLite ou PostgreSQL.
+[![License](https://img.shields.io/badge/License-CeCILL-blue.svg)](https://www.cecill.info/)
 
-## Installation
+**Bibliothèque PHP légère et expressive** pour interagir avec vos bases de données **MySQL**, **SQLite** et **PostgreSQL**.
+
+Conçue pour offrir une **expérience développeur fluide**, `wlib/db` combine un **query builder sécurisé**, une **interface orientée objet** pour la manipulation des tables, et des **fonctionnalités avancées** comme les transactions, les événements et la protection native contre les injections SQL.
+
+> [!WARNING]
+> Le support de PostgreSQL n'a pas été testé en profondeur. Toute contribution pour ce moteur est la bienvenue !
+
+## 📋 Sommaire
+
+- [Installation](#🪛-installation)
+- [Documentation](#📚-documentation)
+  - [Connexion à la base de données](#connexion-à-la-base-de-données)
+  - [Construction de requêtes avec Query](#construction-de-requêtes-avec-query)
+    - [Requêtes SELECT](#requêtes-select)
+    - [Jointures](#jointures)
+    - [Requêtes INSERT](#requêtes-insert)
+    - [Requêtes UPDATE](#requêtes-update)
+    - [Requêtes DELETE et TRUNCATE](#requêtes-delete-et-truncate)
+  - [Gestion des tables avec Table](#gestion-des-tables-avec-table)
+  - [Fonctionnalités avancées](#fonctionnalités-avancées)
+    - [Littéraux SQL](#littéraux-sql)
+    - [Transactions](#transactions)
+    - [Événements](#événements)
+    - [Sécurité](#sécurité)
+    - [Gestion des erreurs](#gestion-des-erreurs)
+  - [Exemples complets](#exemples-complets)
+- [Tests unitaires](#tests-unitaires)
+- [Licence](#📜-licence)
+
+---
+
+## 🪛 Installation
 
 ```shell
 composer require wlib/db
 ```
 
-## Documentation
+
+## 📚 Documentation
 
 La bibliothèque **wlib/db** offre une interface complète pour interagir avec les bases de données **MySQL**, **SQLite** et **PostgreSQL** (support incomplet pour PostgreSQL). Elle fournit des classes puissantes pour construire des requêtes **SQL** de manière sécurisée et expressive.
 
-> [!NOTE]
+> [!TIP]
 > Le code est documenté, n'hésitez pas à le consulter en complément de cette documentation.
 
 ### Connexion à la base de données
@@ -30,7 +62,7 @@ $db = new Db(Db::DRV_PGSQL, 'nom_base', 'utilisateur', 'motdepasse', 'localhost'
 $db->connect();
 ```
 
-> [!NOTE]
+> [!TIP]
 > La connexion est automatiquement établie lors de la première requête si vous n'appelez pas explicitement `connect()`.
 
 ### Construction de requêtes avec Query
@@ -275,8 +307,18 @@ $result = $db->query()
 
 Pour plus d'exemples, consultez le fichier de tests unitaires `/tests/Unit/DbTest.php` qui contient de nombreux cas d'utilisation concrets.
 
+
 ## Tests unitaires
 
 Le fichier `/tests/Unit/DbTest.php` contient de nombreux exemples de mise en oeuvre.
 
 Les tests unitaires font usage de la libraire [Pest](https://pestphp.com/).
+
+
+## 📜 Licence
+
+Ce package est distribué sous la **licence CeCILL 2.1**, une licence open source française compatible avec la GPL.
+
+> **CeCILL** (CEA CNRS INRIA Logiciel Libre) est une licence qui garantit la liberté d'utiliser, modifier et redistribuer le logiciel.
+
+Pour plus d'informations : [http://www.cecill.info](http://www.cecill.info)
